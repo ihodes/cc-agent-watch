@@ -60,6 +60,39 @@ public struct HexClusterView: View {
         return NSImage(size: NSSize(width: size, height: size))
     }
 
+    /// Renders a paused icon: 3 concentric hexagon outlines in template mode (off-white in menubar).
+    @MainActor
+    public static func renderPausedImage(size: CGFloat = 22) -> NSImage {
+        let center = HexPosition(x: Double(size) / 2, y: Double(size) / 2)
+        let outerRadius = Double(size) / 2.0 * 0.85
+        let radii = [outerRadius, outerRadius * 0.62, outerRadius * 0.3]
+
+        let view = Canvas { context, canvasSize in
+            for r in radii {
+                let vertices = HexLayout.hexVertices(center: center, radius: r)
+                var path = Path()
+                guard let first = vertices.first else { continue }
+                path.move(to: CGPoint(x: first.x, y: first.y))
+                for v in vertices.dropFirst() {
+                    path.addLine(to: CGPoint(x: v.x, y: v.y))
+                }
+                path.closeSubpath()
+                context.stroke(path, with: .color(.black), lineWidth: 1.2)
+            }
+        }
+        .frame(width: size, height: size)
+
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2.0
+
+        if let cgImage = renderer.cgImage {
+            let nsImage = NSImage(cgImage: cgImage, size: NSSize(width: size, height: size))
+            nsImage.isTemplate = true
+            return nsImage
+        }
+        return NSImage(size: NSSize(width: size, height: size))
+    }
+
     private func hexPath(center: HexPosition, radius: Double) -> Path {
         let vertices = HexLayout.hexVertices(center: center, radius: radius)
         var path = Path()

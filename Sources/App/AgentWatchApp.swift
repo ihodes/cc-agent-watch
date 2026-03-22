@@ -61,11 +61,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     private func updateIcon() {
         guard let button = statusItem.button else { return }
-        let image = HexClusterView.renderMenuBarImage(
-            projects: appState.enabledProjects,
-            size: 22
-        )
-        button.image = image
+        if appState.isPaused {
+            button.image = HexClusterView.renderPausedImage(size: 22)
+        } else {
+            button.image = HexClusterView.renderMenuBarImage(
+                projects: appState.enabledProjects,
+                size: 22
+            )
+        }
     }
 
     @objc private func togglePopover() {

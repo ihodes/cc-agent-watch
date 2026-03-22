@@ -16,15 +16,22 @@ public final class AppState {
         }
     }
     public var isConfigWindowVisible = false
+    public var isPaused: Bool {
+        didSet {
+            UserDefaults.standard.set(isPaused, forKey: "isPaused")
+        }
+    }
 
     /// Projects that are enabled, not hidden, and have active sessions — used for menubar rendering.
     public var enabledProjects: [ProjectState] {
-        projects.filter { $0.settings.enabled && !$0.settings.hidden && $0.sessionCount > 0 }.sorted { $0.name < $1.name }
+        if isPaused { return [] }
+        return projects.filter { $0.settings.enabled && !$0.settings.hidden && $0.sessionCount > 0 }.sorted { $0.name < $1.name }
     }
 
     public init() {
         let defaultDir = NSHomeDirectory() + "/.claude-monitor/sessions"
         self.monitorDirectory = UserDefaults.standard.string(forKey: "monitorDirectory") ?? defaultDir
+        self.isPaused = UserDefaults.standard.bool(forKey: "isPaused")
         self.projectSettings = Self.loadProjectSettings()
     }
 
@@ -88,6 +95,10 @@ public final class AppState {
     }
 
     // MARK: - Project settings
+
+    public func togglePause() {
+        isPaused.toggle()
+    }
 
     public func toggleProject(named name: String) {
         var settings = projectSettings[name] ?? ProjectSettings()

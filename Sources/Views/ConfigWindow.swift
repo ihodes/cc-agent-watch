@@ -116,9 +116,16 @@ public struct ConfigWindow: View {
                     }
                 }
             }
+            .opacity(appState.isPaused ? 0.4 : 1.0)
+            .animation(.easeInOut(duration: 0.15), value: appState.isPaused)
 
-            // Bottom bar: gear on the right
+            // Bottom bar: pause toggle + gear
             HStack {
+                if appState.isPaused {
+                    Text("PAUSED")
+                        .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
                 Spacer()
                 Button {
                     openSettingsWindow()
@@ -171,6 +178,12 @@ public struct ConfigWindow: View {
         // Cmd+, opens settings
         if hasCmd && event.keyCode == 43 { // kVK_ANSI_Comma
             openSettingsWindow()
+            return true
+        }
+
+        // Cmd+P toggles pause mode (keyCode 35 = kVK_ANSI_P)
+        if hasCmd && !hasShift && event.keyCode == 35 {
+            appState.togglePause()
             return true
         }
 
@@ -362,6 +375,7 @@ struct SettingsView: View {
                     shortcutRow("Shift + Cmd + 1..9", "Color picker for project")
                     shortcutRow("1..8", "Pick preset color (when palette open)")
                     shortcutRow("0", "System color picker (when palette open)")
+                    shortcutRow("Cmd + P", "Pause / resume all monitoring")
                     shortcutRow("Cmd + ,", "Open settings")
                     shortcutRow("Esc", "Dismiss palette / close panel")
                     shortcutRow("Right-click row", "Remove / Hide / Reveal")
