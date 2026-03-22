@@ -1,15 +1,15 @@
 {
   "hooks": {
-    "Notification": [
-      {
-        "matcher": "idle_prompt",
-        "hooks": [{ "type": "command", "command": "$HOME/.claude-monitor/update-state.sh idle" }]
-      }
-    ],
-    "PreToolUse": [
+    "UserPromptSubmit": [
       {
         "matcher": "",
         "hooks": [{ "type": "command", "command": "$HOME/.claude-monitor/update-state.sh running" }]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "",
+        "hooks": [{ "type": "command", "command": "$HOME/.claude-monitor/update-state.sh idle" }]
       }
     ],
     "SessionStart": [

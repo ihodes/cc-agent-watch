@@ -3,10 +3,12 @@ import SwiftUI
 public struct ProjectSettings: Codable, Sendable, Equatable {
     public var enabled: Bool = true
     public var color: String = "#34D058"
+    public var hidden: Bool = false
 
-    public init(enabled: Bool = true, color: String = "#34D058") {
+    public init(enabled: Bool = true, color: String = "#34D058", hidden: Bool = false) {
         self.enabled = enabled
         self.color = color
+        self.hidden = hidden
     }
 }
 
@@ -36,11 +38,14 @@ public struct ProjectState: Identifiable, Equatable, Sendable {
     public var displayStatus: String {
         if sessions.isEmpty { return "no sessions" }
         let idle = idleCount
-        if idle > 0 {
-            return "\(idle) idle"
-        }
         let running = sessions.filter { $0.status == .running || $0.status == .started }.count
-        return "\(running) running"
+        if idle > 0 && running > 0 {
+            return "\(idle) ready / \(running) running"
+        } else if idle > 0 {
+            return "\(idle) ready"
+        } else {
+            return "\(running) running"
+        }
     }
 
     public var resolvedColor: Color {

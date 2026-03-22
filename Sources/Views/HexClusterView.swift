@@ -1,4 +1,5 @@
 import SwiftUI
+import AppKit
 
 /// Renders a cluster of hexagons for the menubar icon.
 public struct HexClusterView: View {
@@ -19,30 +20,44 @@ public struct HexClusterView: View {
             let (centers, radius) = HexLayout.positions(count: max(projects.count, 0), in: Double(s))
 
             if projects.isEmpty {
-                // Placeholder: single grey hex outline
-                let center = centers[0]
-                let path = hexPath(center: center, radius: radius)
+                let path = hexPath(center: centers[0], radius: radius)
                 context.stroke(path, with: .color(placeholderGrey), lineWidth: 1.5)
             } else {
                 for (i, project) in projects.enumerated() where i < centers.count {
-                    let center = centers[i]
-                    let path = hexPath(center: center, radius: radius * 0.9) // slight padding
+                    let path = hexPath(center: centers[i], radius: radius)
+                    let color = project.resolvedColor
 
-                    let fillColor: Color
                     if project.hasStale {
-                        fillColor = busyGrey.opacity(0.5)
+                        // Stale: dimmed outline
+                        context.stroke(path, with: .color(color.opacity(0.4)), lineWidth: 1.0)
                     } else if project.isIdle {
-                        fillColor = project.resolvedColor
+                        // Ready: filled
+                        context.fill(path, with: .color(color))
                     } else {
-                        fillColor = busyGrey
+                        // Running: colored outline only
+                        context.stroke(path, with: .color(color), lineWidth: 1.0)
                     }
-
-                    context.fill(path, with: .color(fillColor))
-                    context.stroke(path, with: .color(fillColor.opacity(0.8)), lineWidth: 0.5)
                 }
             }
         }
         .frame(width: size, height: size)
+    }
+
+    /// Renders the hex cluster into an NSImage using ImageRenderer.
+    @MainActor
+    public static func renderMenuBarImage(projects: [ProjectState], size: CGFloat = 22) -> NSImage {
+        let view = HexClusterView(projects: projects, size: size)
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = 2.0
+
+        if let cgImage = renderer.cgImage {
+            let nsImage = NSImage(cgImage: cgImage, size: NSSize(width: size, height: size))
+            nsImage.isTemplate = false
+            return nsImage
+        }
+
+        // Fallback: empty image
+        return NSImage(size: NSSize(width: size, height: size))
     }
 
     private func hexPath(center: HexPosition, radius: Double) -> Path {

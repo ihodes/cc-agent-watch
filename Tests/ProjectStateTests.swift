@@ -54,8 +54,8 @@ func runProjectStateTests() {
         try expectEqual(project.sessionCount, 3)
     }
 
-    test("Display status shows idle count") {
-        let project = ProjectState(
+    test("Display status shows mixed counts") {
+        let mixed = ProjectState(
             name: "test",
             sessions: [
                 makeSession(id: "s1", status: .idle),
@@ -63,7 +63,14 @@ func runProjectStateTests() {
             ],
             settings: ProjectSettings()
         )
-        try expectEqual(project.displayStatus, "1 idle")
+        try expectEqual(mixed.displayStatus, "1 ready / 1 running")
+
+        let allIdle = ProjectState(
+            name: "test",
+            sessions: [makeSession(id: "s1", status: .idle)],
+            settings: ProjectSettings()
+        )
+        try expectEqual(allIdle.displayStatus, "1 ready")
     }
 
     test("Display status shows running count") {

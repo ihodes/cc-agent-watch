@@ -3,38 +3,78 @@ import AgentWatchLib
 
 @main
 struct AgentWatchApp: App {
-    @State private var appState = AppState()
-    @State private var watcher: DirectoryWatcher?
-    @State private var hotkeyManager: HotkeyManager?
+    @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
 
     var body: some Scene {
-        MenuBarExtra {
-            ConfigWindow(appState: appState)
-        } label: {
-            HexClusterView(projects: appState.enabledProjects, size: 22)
-        }
-        .menuBarExtraStyle(.window)
-
-        // Info.plist equivalent: LSUIElement = YES (no Dock icon)
         Settings {
             EmptyView()
         }
     }
+}
 
-    init() {
-        // Set LSUIElement programmatically
-        NSApplication.shared.setActivationPolicy(.accessory)
-    }
+@MainActor
+final class AppDelegate: NSObject, NSApplicationDelegate {
+    private var statusItem: NSStatusItem!
+    private var popover: NSPopover!
+    let appState = AppState()
+    var hotkeyManager: HotkeyManager!
+    private var watcher: DirectoryWatcher?
 
-    private func startWatching() {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        NSApp.setActivationPolicy(.accessory)
+
+        statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
+        if let button = statusItem.button {
+            button.action = #selector(togglePopover)
+            button.target = self
+            updateIcon()
+        }
+
+        hotkeyManager = HotkeyManager { [weak self] in
+            self?.togglePopover()
+        }
+
+        popover = NSPopover()
+        popover.behavior = .transient
+        let hostingController = NSHostingController(
+            rootView: ConfigWindow(appState: appState, hotkeyManager: hotkeyManager)
+        )
+        hostingController.view.setFrameSize(hostingController.sizeThatFits(in: NSSize(width: 500, height: 600)))
+        popover.contentViewController = hostingController
+
         appState.loadSessions()
-        watcher = DirectoryWatcher(directoryPath: appState.monitorDirectory) { [appState] in
+        updateIcon()
+
+        watcher = DirectoryWatcher(directoryPath: appState.monitorDirectory) { [weak self] in
             Task { @MainActor in
-                appState.loadSessions()
+                self?.appState.loadSessions()
+                self?.updateIcon()
             }
         }
-        hotkeyManager = HotkeyManager {
-            appState.isConfigWindowVisible.toggle()
+
+        Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
+            Task { @MainActor in
+                self?.updateIcon()
+            }
+        }
+    }
+
+    private func updateIcon() {
+        guard let button = statusItem.button else { return }
+        let image = HexClusterView.renderMenuBarImage(
+            projects: appState.enabledProjects,
+            size: 22
+        )
+        button.image = image
+    }
+
+    @objc private func togglePopover() {
+        guard let button = statusItem.button else { return }
+        if popover.isShown {
+            popover.performClose(nil)
+        } else {
+            popover.show(relativeTo: button.bounds, of: button, preferredEdge: .minY)
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 }

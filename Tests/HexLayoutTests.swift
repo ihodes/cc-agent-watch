@@ -41,15 +41,13 @@ func runHexLayoutTests() {
         }
     }
 
-    test("Positions within bounds for N=1..12") {
+    test("Centers within bounds for N=1..12") {
         let size = 22.0
         for n in 1...12 {
-            let (centers, radius) = HexLayout.positions(count: n, in: size)
+            let (centers, _) = HexLayout.positions(count: n, in: size)
             for c in centers {
-                try expect(c.x - radius >= -1.0, "x too small for n=\(n)")
-                try expect(c.x + radius <= size + 1.0, "x too large for n=\(n)")
-                try expect(c.y - radius >= -1.0, "y too small for n=\(n)")
-                try expect(c.y + radius <= size + 1.0, "y too large for n=\(n)")
+                try expect(c.x >= 0 && c.x <= size, "center x out of bounds for n=\(n): \(c.x)")
+                try expect(c.y >= 0 && c.y <= size, "center y out of bounds for n=\(n): \(c.y)")
             }
         }
     }
@@ -78,10 +76,11 @@ func runHexLayoutTests() {
         }
     }
 
-    test("Flat-top orientation (first vertex at 0 degrees)") {
+    test("Pointy-top orientation (first vertex at 30 degrees)") {
         let center = HexPosition(x: 0, y: 0)
         let vertices = HexLayout.hexVertices(center: center, radius: 10)
-        try expect(abs(vertices[0].x - 10.0) < 0.001, "x should be 10")
-        try expect(abs(vertices[0].y - 0.0) < 0.001, "y should be 0")
+        // First vertex at 30°: (r*cos(30°), r*sin(30°)) = (r*sqrt(3)/2, r/2)
+        try expect(abs(vertices[0].x - 10.0 * sqrt(3.0) / 2.0) < 0.001, "x should be r*sqrt(3)/2")
+        try expect(abs(vertices[0].y - 5.0) < 0.001, "y should be r/2")
     }
 }

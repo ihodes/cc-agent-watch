@@ -66,18 +66,25 @@ func runAppStateTests() {
         let dir = try createTempDir()
         defer { try? FileManager.default.removeItem(at: dir) }
 
-        try writeSession(to: dir, id: "s1", project: "enabled-proj", status: "running")
-        try writeSession(to: dir, id: "s2", project: "disabled-proj", status: "running")
+        let projName = "zzz-disabled-\(UUID().uuidString)"
+        let enabledName = "zzz-enabled-\(UUID().uuidString)"
+        try writeSession(to: dir, id: "s1", project: enabledName, status: "running")
+        try writeSession(to: dir, id: "s2", project: projName, status: "running")
 
         let state = AppState()
         state.monitorDirectory = dir.path
         state.loadSessions()
 
-        state.toggleProject(named: "disabled-proj")
+        // Ensure it starts enabled, then disable it
+        let proj = state.projects.first { $0.name == projName }
+        try expect(proj?.settings.enabled == true, "should start enabled")
+
+        state.toggleProject(named: projName)
 
         let enabled = state.enabledProjects
-        try expectEqual(enabled.count, 1)
-        try expectEqual(enabled.first?.name, "enabled-proj")
+        let enabledNames = enabled.map(\.name)
+        try expect(enabledNames.contains(enabledName), "enabled project should be in list")
+        try expect(!enabledNames.contains(projName), "disabled project should not be in list")
     }
 
     test("Ignores dotfiles") {
@@ -138,7 +145,7 @@ func runAppStateTests() {
         let dir = try createTempDir()
         defer { try? FileManager.default.removeItem(at: dir) }
 
-        let oldTimestamp = Int(Date().timeIntervalSince1970) - 600
+        let oldTimestamp = Int(Date().timeIntervalSince1970) - 400 // 6.6 min: stale (>5m) but not cleanup (>10m)
         try writeSession(to: dir, id: "s1", project: "stale-proj", status: "running", timestamp: oldTimestamp)
 
         let state = AppState()
