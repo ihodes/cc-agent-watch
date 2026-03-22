@@ -25,7 +25,17 @@ Claude Code [hooks](https://docs.anthropic.com/en/docs/claude-code/hooks) write 
 |-------|----------|
 | ![Panel](screenshots/panel.png) | ![Settings](screenshots/settings.png) |
 
-## Setup
+## Quick install
+
+```bash
+git clone https://github.com/ihodes/cc-agent-watch.git
+cd cc-agent-watch
+bash install.sh
+```
+
+This installs the hook script, merges hooks into your Claude Code settings, builds the app, and sets it up as a launch agent that starts on login.
+
+## Manual setup
 
 ### 1. Install the hook script
 
