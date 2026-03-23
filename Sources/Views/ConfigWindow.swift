@@ -215,6 +215,17 @@ public struct ConfigWindow: View {
             return true
         }
 
+        // Bare number key (no modifiers): open color picker for that project
+        if !hasCmd && !hasShift && !hasOption {
+            guard digit >= 1 && digit <= 9 else { return false }
+            let index = digit - 1
+            guard index < sortedProjects.count else { return false }
+            withAnimation(.easeInOut(duration: 0.15)) {
+                colorPickerProjectIndex = (colorPickerProjectIndex == index) ? nil : index
+            }
+            return true
+        }
+
         guard hasCmd else { return false }
         guard digit >= 1 && digit <= 9 else { return false }
 
@@ -223,11 +234,6 @@ public struct ConfigWindow: View {
 
         if hasOption {
             appState.toggleSound(named: sortedProjects[index].name)
-            return true
-        } else if hasShift {
-            withAnimation(.easeInOut(duration: 0.15)) {
-                colorPickerProjectIndex = (colorPickerProjectIndex == index) ? nil : index
-            }
             return true
         } else {
             appState.toggleProject(named: sortedProjects[index].name)
@@ -379,7 +385,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     shortcutRow("Cmd + 1..9", "Toggle project on/off")
                     shortcutRow("Opt + Cmd + 1..9", "Toggle idle sound for project")
-                    shortcutRow("Shift + Cmd + 1..9", "Color picker for project")
+                    shortcutRow("1..9", "Color picker for project")
                     shortcutRow("1..8", "Pick preset color (when palette open)")
                     shortcutRow("0", "System color picker (when palette open)")
                     shortcutRow("Cmd + P", "Pause / resume all monitoring")
