@@ -10,8 +10,10 @@ public struct ProjectRowView: View {
     let onRemove: () -> Void
     let onHide: () -> Void
     let onRevealInFinder: () -> Void
+    let onToggleSound: () -> Void
+    let onSetSound: (String) -> Void
 
-    public init(project: ProjectState, index: Int, onToggle: @escaping () -> Void, onColorChange: @escaping (Color) -> Void, onSwatchTap: @escaping () -> Void, onRemove: @escaping () -> Void, onHide: @escaping () -> Void, onRevealInFinder: @escaping () -> Void) {
+    public init(project: ProjectState, index: Int, onToggle: @escaping () -> Void, onColorChange: @escaping (Color) -> Void, onSwatchTap: @escaping () -> Void, onRemove: @escaping () -> Void, onHide: @escaping () -> Void, onRevealInFinder: @escaping () -> Void, onToggleSound: @escaping () -> Void, onSetSound: @escaping (String) -> Void) {
         self.project = project
         self.index = index
         self.onToggle = onToggle
@@ -20,6 +22,8 @@ public struct ProjectRowView: View {
         self.onRemove = onRemove
         self.onHide = onHide
         self.onRevealInFinder = onRevealInFinder
+        self.onToggleSound = onToggleSound
+        self.onSetSound = onSetSound
     }
 
     public var body: some View {
@@ -63,6 +67,16 @@ public struct ProjectRowView: View {
 
             Spacer()
 
+            Button {
+                onToggleSound()
+            } label: {
+                Image(systemName: project.settings.soundEnabled ? "speaker.wave.2.fill" : "speaker.slash")
+                    .font(.system(size: 10))
+                    .foregroundStyle(project.settings.soundEnabled ? .primary : .quaternary)
+            }
+            .buttonStyle(.plain)
+            .help(project.settings.soundEnabled ? "Sound: \(project.settings.soundName) (Opt+Cmd+\(index + 1))" : "Enable idle sound (Opt+Cmd+\(index + 1))")
+
             Toggle("", isOn: Binding(
                 get: { project.settings.enabled },
                 set: { _ in onToggle() }
@@ -76,10 +90,29 @@ public struct ProjectRowView: View {
                 onRevealInFinder()
             }
             Divider()
+            Toggle("Sound on Idle", isOn: Binding(
+                get: { project.settings.soundEnabled },
+                set: { _ in onToggleSound() }
+            ))
+            Menu("Alert Sound") {
+                ForEach(AppState.systemSounds, id: \.self) { sound in
+                    Button {
+                        onSetSound(sound)
+                    } label: {
+                        HStack {
+                            Text(sound)
+                            if project.settings.soundName == sound && project.settings.soundEnabled {
+                                Image(systemName: "checkmark")
+                            }
+                        }
+                    }
+                }
+            }
+            Divider()
             Button("Hide Project") {
                 onHide()
             }
-            Button("Remove from List") {
+            Button("Clean Up Project Files") {
                 onRemove()
             }
         }

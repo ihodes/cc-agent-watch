@@ -1,10 +1,13 @@
 import SwiftUI
+import AppKit
 import Combine
 
 @Observable
 @MainActor
 public final class AppState {
     public var projects: [ProjectState] = []
+    /// Tracks which projects were idle last time we checked, for transition detection.
+    private var previouslyIdle: Set<String> = []
     public var monitorDirectory: String {
         didSet {
             UserDefaults.standard.set(monitorDirectory, forKey: "monitorDirectory")
@@ -67,9 +70,11 @@ public final class AppState {
             }
         }
 
+        let oldIdle = previouslyIdle
         projects = rebuildProjects(from: liveSessions)
         syncAgentConfigs()
         refreshProjectSettings()
+        playIdleSounds(previouslyIdle: oldIdle)
     }
 
     private func rebuildProjects(from sessions: [Session]) -> [ProjectState] {
@@ -98,6 +103,51 @@ public final class AppState {
 
     public func togglePause() {
         isPaused.toggle()
+    }
+
+    public func toggleSound(named name: String) {
+        var settings = projectSettings[name] ?? ProjectSettings()
+        settings.soundEnabled.toggle()
+        projectSettings[name] = settings
+        refreshProjectSettings()
+        if settings.soundEnabled {
+            playSound(settings.soundName)
+        }
+    }
+
+    public func setSound(for name: String, sound: String) {
+        var settings = projectSettings[name] ?? ProjectSettings()
+        settings.soundName = sound
+        settings.soundEnabled = true
+        projectSettings[name] = settings
+        refreshProjectSettings()
+        playSound(sound)
+    }
+
+    public static let systemSounds = [
+        "Glass", "Ping", "Tink", "Pop", "Purr", "Hero",
+        "Blow", "Bottle", "Frog", "Funk", "Morse",
+        "Sosumi", "Submarine", "Basso"
+    ]
+
+    public func playSound(_ name: String) {
+        NSSound(named: NSSound.Name(name))?.play()
+    }
+
+    private func playIdleSounds(previouslyIdle oldIdle: Set<String>) {
+        guard !isPaused else {
+            previouslyIdle = Set(projects.filter { $0.isIdle }.map(\.name))
+            return
+        }
+        let nowIdle = Set(projects.filter { $0.isIdle && $0.settings.enabled }.map(\.name))
+        let newlyIdle = nowIdle.subtracting(oldIdle)
+        for name in newlyIdle {
+            let settings = projectSettings[name] ?? ProjectSettings()
+            if settings.soundEnabled {
+                playSound(settings.soundName)
+            }
+        }
+        previouslyIdle = nowIdle
     }
 
     public func toggleProject(named name: String) {

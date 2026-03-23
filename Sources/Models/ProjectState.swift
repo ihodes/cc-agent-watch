@@ -4,11 +4,15 @@ public struct ProjectSettings: Codable, Sendable, Equatable {
     public var enabled: Bool = true
     public var color: String = "#34D058"
     public var hidden: Bool = false
+    public var soundEnabled: Bool = false
+    public var soundName: String = "Glass"
 
-    public init(enabled: Bool = true, color: String = "#34D058", hidden: Bool = false) {
+    public init(enabled: Bool = true, color: String = "#34D058", hidden: Bool = false, soundEnabled: Bool = false, soundName: String = "Glass") {
         self.enabled = enabled
         self.color = color
         self.hidden = hidden
+        self.soundEnabled = soundEnabled
+        self.soundName = soundName
     }
 }
 

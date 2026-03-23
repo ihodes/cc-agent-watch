@@ -62,8 +62,8 @@ public struct ConfigWindow: View {
             // Project list header
             HStack {
                 Text("#").frame(width: 30)
-                Text("Project").frame(minWidth: 120, alignment: .leading)
-                Text("Status").frame(minWidth: 80, alignment: .leading)
+                Text("Project").frame(maxWidth: 180, alignment: .leading)
+                Text("Status").frame(alignment: .leading)
                 Spacer()
             }
             .font(.caption)
@@ -88,7 +88,9 @@ public struct ConfigWindow: View {
                             if let cwd = project.sessions.first?.cwd {
                                 NSWorkspace.shared.selectFile(nil, inFileViewerRootedAtPath: cwd)
                             }
-                        }
+                        },
+                        onToggleSound: { appState.toggleSound(named: project.name) },
+                        onSetSound: { sound in appState.setSound(for: project.name, sound: sound) }
                     )
                     .zIndex(colorPickerProjectIndex == index ? 100 : 0)
                     .overlay(alignment: .topLeading) {
@@ -174,6 +176,7 @@ public struct ConfigWindow: View {
     private func handleKeyEvent(_ event: NSEvent) -> Bool {
         let hasCmd = event.modifierFlags.contains(.command)
         let hasShift = event.modifierFlags.contains(.shift)
+        let hasOption = event.modifierFlags.contains(.option)
 
         // Cmd+, opens settings
         if hasCmd && event.keyCode == 43 { // kVK_ANSI_Comma
@@ -218,7 +221,10 @@ public struct ConfigWindow: View {
         let index = digit - 1
         guard index < sortedProjects.count else { return false }
 
-        if hasShift {
+        if hasOption {
+            appState.toggleSound(named: sortedProjects[index].name)
+            return true
+        } else if hasShift {
             withAnimation(.easeInOut(duration: 0.15)) {
                 colorPickerProjectIndex = (colorPickerProjectIndex == index) ? nil : index
             }
@@ -372,6 +378,7 @@ struct SettingsView: View {
             GroupBox("Keyboard Shortcuts") {
                 VStack(alignment: .leading, spacing: 4) {
                     shortcutRow("Cmd + 1..9", "Toggle project on/off")
+                    shortcutRow("Opt + Cmd + 1..9", "Toggle idle sound for project")
                     shortcutRow("Shift + Cmd + 1..9", "Color picker for project")
                     shortcutRow("1..8", "Pick preset color (when palette open)")
                     shortcutRow("0", "System color picker (when palette open)")
